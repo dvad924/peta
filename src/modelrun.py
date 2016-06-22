@@ -52,7 +52,6 @@ def get_pclass(net,img):
     clasmap = {'0':1,'1':0}
     probs =  run_img(net,img)
     
-    print probs
     clas = probs.argmax() #get the class of highest probability
     #print 'predicted class : {}'.format( clasmap[str(clas)] )
     return clasmap[str(clas)]
@@ -90,6 +89,7 @@ def eval_vid(net,vid):
     #pdb.set_trace()
     labels = np.array(labels)
     plabels = np.array(plabels)
+    
     eqs = (labels == plabels)
     grade = float(eqs.sum()*1.0/eqs.size)
     return grade
@@ -135,10 +135,7 @@ def load_img(fname,net):
     transformer.set_transpose('data',(2,0,1))
     img = caffe.io.load_image(fname)
     transformed_image = transformer.preprocess('data',img)
-    
-    print img.shape
-    print transformed_image.shape
-    
+        
     return transformed_image
 
 def write_results(fname,output):
