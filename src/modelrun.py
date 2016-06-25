@@ -49,12 +49,12 @@ def eval_img(net,imgname):
         print 'Error {}'.format(e)
         
 def get_pclass(net,img):
-    clasmap = {'0':1,'1':0}
+
     probs =  run_img(net,img)
     
     clas = probs.argmax() #get the class of highest probability
     #print 'predicted class : {}'.format( clasmap[str(clas)] )
-    return clasmap[str(clas)]
+    return clas
 
 def eval_vid(net,vid):
     labels = []
@@ -82,34 +82,51 @@ def eval_vid(net,vid):
         if end - start > 1:
             framecount = ix - prevFrames
             print "fps: {}".format(framecount)
+            prevFrames = ix
             start = end
         plabels.append(clas)
         labels.append(vid_runner.get_class(ix))
         img = vid_runner.getNextImage()
     #pdb.set_trace()
+    return grader(labels,plabels)
+
+def grader(labels,plabels):
     labels = np.array(labels)
     plabels = np.array(plabels)
     
     eqs = (labels == plabels)
+    ones = labels==1
+    zeros = labels==0
+    posEqs = labels[ones] == plabels[ones]
+    negEqs = labels[zeros] == plabels[zeros]
+    posTotal = posEqs.sum()*1.0
+    negTotal = negEqs.sum()*1.0
+    gradeTotal = eqs.sum()*1.0
     grade = float(eqs.sum()*1.0/eqs.size)
-    return grade
+    
+    return eqs.size,gradeTotal,ones.sum(),posTotal,zeros.sum(),negTotal
 
 def eval_imgs(net,dirname):
     files = []
     labels = []
     plabels = []
+    data = np.array([])
     if os.path.exists(dirname):
         data = np.genfromtxt(dirname,dtype='str')
-    
+    ix = 0
     for fname in data[:,0]:
+        print ix
+        ix += 1
         lab = eval_img(net,fname)
         plabels.append(lab)
     labels = data[:,1].astype(np.int)
-    plables = np.array(plabels)
+    return grader(labels,plabels)
 
-    eqs = (labels == plables)
-    grade = float(eqs.sum()*1.0/eqs.size)
-    return grade
+#    plables = np.array(plabels)
+
+ #   eqs = (labels == plables)
+  #  grade = float(eqs.sum()*1.0/eqs.size)
+   # return grade
             
 def run_img(net,img):
     net.blobs['data'].data[...] = img #... is placeholder for all dims
@@ -118,6 +135,7 @@ def run_img(net,img):
     output = net.forward()
     #pdb.set_trace()
     #print 'forward time : {}'.format(time.time() - t)
+    
     output_prob = output['loss'][0]
     return output_prob
 
@@ -127,7 +145,6 @@ def trans_opencv_img(img,net):
     transformer.set_channel_swap('data',(2,1,0))
     transformer.set_raw_scale('data',0.00390625)
     transformed_image = transformer.preprocess('data',img)
-    print transformed_image.shape
     return transformed_image
 
 def load_img(fname,net):
@@ -135,7 +152,6 @@ def load_img(fname,net):
     transformer.set_transpose('data',(2,0,1))
     img = caffe.io.load_image(fname)
     transformed_image = transformer.preprocess('data',img)
-        
     return transformed_image
 
 def write_results(fname,output):
@@ -143,6 +159,14 @@ def write_results(fname,output):
         with open(fname,'w') as f:
             f.write(output)
 
+def write_eval(tup,outfile):
+    totsize,gTotal,posSize,posTotal,negSize,negTotal = tup
+    rez = "Total evaluation: {}/{} = {}\n".format(gTotal,totsize,float(gTotal/totsize))
+    rez += "Positive Evaluation: {}/{} = {}\n".format(posTotal,posSize,float(posTotal/posSize))
+    rez += "Negative Evaluation: {}/{} = {}\n".format(negTotal,negSize,float(negTotal/negSize))
+    print rez
+    write_results(outfile,rez)
+            
 def main():
     parser = ag.ArgumentParser()
     parser.add_argument('--file',help='Enter the name of the input image')
@@ -160,21 +184,18 @@ def main():
     modelweights = args.weights
     outfile = args.out
     grade = None
+
     if filename :
         net = init_net(modelweights,modelname)
         labels = eval_img(net,filename)
     elif vidname :
         net = init_net(modelweights,modelname)
-        grade = eval_vid(net,vidname)
-        rez = "Total evaluation: {}%".format(grade)
-        print rez
-        write_results(outfile,rez)
+        tup = eval_vid(net,vidname)
+        write_eval(tup,outfile)
     elif listname :
         net = init_net(modelweights,modelname)
-        grade = eval_imgs(net,listname)
-        rez = "Total evaluation: {}%".format(grade)
-        print rez
-        write_results(outfile,rez)
+        tup = eval_imgs(net,listname)
+        write_eval(tup,outfile)
 
     else:
         print """Error no images specified

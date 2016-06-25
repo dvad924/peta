@@ -43,7 +43,7 @@ GLOG_logtostderr=1 $TOOLS/convert_imageset \
 		--shuffle \
 		$TRAIN_DATA_ROOT \
 		$METADATA/train.txt \
-		$EXAMPLE/peta_train_lmdb
+		$EXAMPLE/petarev_train_lmdb
 
 echo "Creating val lmdb..."
 
@@ -53,6 +53,6 @@ GLOG_logtostderr=1 $TOOLS/convert_imageset \
 		--shuffle \
 		$VAL_DATA_ROOT \
 		$METADATA/test.txt \
-		$EXAMPLE/peta_test_lmdb
+		$EXAMPLE/petarev_test_lmdb
 
 echo "Done."

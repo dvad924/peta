@@ -2,10 +2,12 @@ import os
 import shutil as sh
 import numpy as np
 
+
+
 def __main__():
-    data_root = '/data/peta_data/'
-    data_train = '/data/peta_data_train/'
-    data_test = '/data/peta_data_test/'
+    data_root = '/data/peta/peta_data/'
+    data_train = '/data/peta/peta_data_train_even/'
+    data_test = '/data/peta/peta_data_test_even/'
     if not os.path.exists(data_train):
             os.mkdir(data_train)
     if not os.path.exists(data_test):
@@ -20,7 +22,7 @@ def __main__():
             arr = np.array(files)
             np.random.shuffle(arr)
             r =  np.size(arr)
-            numtrain = r * 0.9
+            numtrain = r * 0.55
             trainfiles = arr[0:numtrain]
             testfiles = arr[numtrain:]
             numfiles += r
